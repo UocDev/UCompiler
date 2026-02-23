@@ -1,10 +1,9 @@
-#include <iostream>
-
+#include "void.hpp"
 
 int main()
 {
 
-  std::cout << "Hello World" << std::endl;
+  hi();
 
   return 0;
 }
