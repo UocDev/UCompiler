@@ -7,36 +7,30 @@ TARGET := build/uuc
 SUBDIRS := source
 
 BUILD_DIR := $(CURDIR)/build
-TOOLS_DIR := $(CURDIR)/tools
-
 INCLUDES := -I$(CURDIR)/include
 
-PCH_HEADER := $(CURDIR)/include/pch.h
-PCH_FILE := $(TOOLS_DIR)/pch.h.gch
+PCH_HEADER := $(CURDIR)/include/ucc/tools/pch.h
+PCH_HEADER_REL := include/ucc/tools/pch.h
+PCH_FILE := $(BUILD_DIR)/pch.h.gch
 
 LDFLAGS :=
 
 ifeq ($(BUILD),debug)
 CFLAGS := -std=gnu11 -g -O0 -Wall -Wextra -Wpedantic -Wstrict-prototypes $(INCLUDES)
 MODETXT := DEBUG
-
 else ifeq ($(BUILD),debugres)
 CFLAGS := -std=gnu11 -O0 -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Wundef -Wformat -Wsign-conversion -Wcast-align -Wstrict-prototypes $(INCLUDES)
 MODETXT := DEBUGRES
-
 else ifeq ($(BUILD),release)
 CFLAGS := -std=gnu11 -O2 -DNDEBUG $(INCLUDES)
 MODETXT := RELEASE
-
 else ifeq ($(BUILD),restriction)
 CFLAGS := -std=gnu11 -O0 -Wall -Wextra -Wpedantic -Werror -Wstrict-prototypes $(INCLUDES)
 MODETXT := RESTRICTION
-
 else
 $(error Unknown BUILD type)
 endif
 
-# cek apakah pch.h ada
 ifneq ("$(wildcard $(PCH_HEADER))","")
 HAS_PCH := 1
 else
@@ -50,9 +44,13 @@ MAKEFLAGS += --no-print-directory
 V ?= 0
 ifeq ($(V),1)
 Q :=
+USE_ABS := 1
 else
 Q := @
+USE_ABS :=
 endif
+
+logpath = $(if $(USE_ABS),$(1),$(2))
 
 define log
 printf "  %-7s %s\n" "$(1)" "$(2)"
@@ -60,15 +58,15 @@ endef
 
 OBJS = $(shell find $(BUILD_DIR) -name '*.o' 2>/dev/null)
 
-.PHONY: all info subdirs link clean rebuild pch
+.PHONY: all info subdirs link clear rebuild pch
 
-all: info subdirs link
+all: info pch subdirs link
 
 info:
 	@echo "Build mode : $(MODETXT)"
 	@if [ "$(HAS_PCH)" = "1" ]; then \
 		if [ -f "$(PCH_FILE)" ]; then \
-			echo "PCH        : available"; \
+			echo "PCH        : compiled"; \
 		else \
 			echo "PCH        : header exists (not compiled)"; \
 		fi \
@@ -78,8 +76,8 @@ info:
 
 pch:
 ifeq ($(HAS_PCH),1)
-	$(Q)$(call log,PCH,$(PCH_HEADER))
-	@mkdir -p $(TOOLS_DIR)
+	$(Q)$(call log,PCH,$(call logpath,$(PCH_HEADER),$(PCH_HEADER_REL)))
+	@mkdir -p $(BUILD_DIR)
 	$(Q)$(CC) $(CFLAGS) -x c-header $(PCH_HEADER) -o $(PCH_FILE)
 else
 	@echo "No pch.h found"
@@ -88,7 +86,7 @@ endif
 subdirs:
 	@for dir in $(SUBDIRS); do \
 		$(call log,MAKE,$$dir); \
-		$(MAKE) -C $$dir || exit 1; \
+		$(MAKE) -C $$dir V=$(V) || exit 1; \
 	done
 
 link:
@@ -96,11 +94,11 @@ link:
 	@mkdir -p $(BUILD_DIR)
 	$(Q)$(CC) $(OBJS) -o $(TARGET) $(LDFLAGS)
 
-clean:
-	$(Q)$(call log,CLEAN,objects)
+clear:
+	$(Q)$(call log,CLEAR,build)
 	@for dir in $(SUBDIRS); do \
-		$(MAKE) -C $$dir clean; \
+		$(MAKE) -C $$dir clear V=$(V); \
 	done
 	@rm -rf $(BUILD_DIR)
 
-rebuild: clean all
+rebuild: clear all
