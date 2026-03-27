@@ -15,7 +15,7 @@ ifeq ($(BUILD),debug)
     CFLAGS := -std=gnu11 -g -O0 -Wall -Wextra -Wpedantic -Wstrict-prototypes $(INCLUDES)
     MODETXT := DEBUG
 else ifeq ($(BUILD),debugres)
-    CFLAGS := -std=gnu11 -O0 -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Wundef -Wformat -Wsign-conversion -Wcast-align -Wstrict-prototypes $(INCLUDES)
+    CFLAGS := -std=gnu11 -O0 -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Wundef -Wformat -Wsign-conversion -Wcast-align -Wstrict-prototypes -Werror $(INCLUDES)
     MODETXT := DEBUGRES
 else ifeq ($(BUILD),release)
     CFLAGS := -std=gnu11 -O2 -w  $(INCLUDES)
