@@ -87,7 +87,7 @@ jobs:
       shell: bash
       run: |
         make BUILD=pch
-        make BUILD=debugres V=1
+        make BUILD=debug V=1
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v4
