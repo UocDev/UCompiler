@@ -6,7 +6,7 @@
 * Type         : Entry Point
 * Description  : Main entry point for this program
 *
-* Author       : UocDev
+* Author       : Uoc Tamika
 * Author ID    : 1
 *
 * License      : GNU GPL V2
@@ -14,12 +14,18 @@
 */
 
 #include <ucc/tools/pch.h>
+#include <ucc/tools/color.h>
 
-int main(void)
+int main(int argc, char *argv[])
 {
 
+    if(argc < 2)
+    {
+       fprintf(stderr, ANSI_BOLD_RED "Error: " ANSI_RESET "Missing input file\n");
+       printf("Use yuc <file_name>.u\n");
+       exit(-1);
+    }
 
-  printf("Hello World\n");
 
-  return 0;
+    return 0;
 }
