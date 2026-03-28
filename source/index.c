@@ -22,10 +22,10 @@ int main(int argc, char *argv[])
     if(argc < 2)
     {
        fprintf(stderr, ANSI_BOLD_RED "Error: " ANSI_RESET "Missing input file\n");
-       printf("Use yuc <file_name>.u\n");
+       printf(ANSI_YELLOW "Hint: " ANSI_RESET "Use yuc <file_name>.u\n");
        exit(-1);
     }
 
-
+    
     return 0;
 }
