@@ -22,7 +22,8 @@ endef
 
 all: $(OBJ)
 
-$(OUT)/%.o: %.c
+# 🔥 Depend ke PCH → auto rebuild kalau berubah
+$(OUT)/%.o: %.c $(PCH_FILE)
 	@mkdir -p $(OUT)
 	$(Q)$(call log,CC,$(call logpath))
 	$(Q)$(CC) $(CFLAGS) -MMD -MP -c $< -o $@

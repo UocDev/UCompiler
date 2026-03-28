@@ -11,6 +11,7 @@ PCH_HEADER := $(CURDIR)/include/ucc/tools/pch.h
 PCH_HEADER_REL := include/ucc/tools/pch.h
 PCH_FILE := $(BUILD_DIR)/pch.h.gch
 
+# ================= BUILD MODES =================
 ifeq ($(BUILD),debug)
     CFLAGS := -std=gnu11 -g -O0 -Wall -Wextra -Wpedantic -Wstrict-prototypes $(INCLUDES)
     MODETXT := DEBUG
@@ -18,18 +19,19 @@ else ifeq ($(BUILD),debugres)
     CFLAGS := -std=gnu11 -O0 -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Wundef -Wformat -Wsign-conversion -Wcast-align -Wstrict-prototypes -Werror $(INCLUDES)
     MODETXT := DEBUGRES
 else ifeq ($(BUILD),release)
-    CFLAGS := -std=gnu11 -O2 -w  $(INCLUDES)
+    CFLAGS := -std=gnu11 -O2 -w $(INCLUDES)
     MODETXT := RELEASE
 else ifeq ($(BUILD),restriction)
     CFLAGS := -std=gnu11 -O0 -Wall -Wextra -Wpedantic -Werror -Wstrict-prototypes $(INCLUDES)
     MODETXT := RESTRICTION
-else ifeq ($(BUILD),pch)
-    CFLAGS := -std=gnu11 -O0 -g $(INCLUDES)
-    MODETXT := PCH
 else
     $(error Unknown BUILD type)
 endif
 
+# 🔥 Selalu include PCH (penting untuk clangd juga)
+CFLAGS += -include $(PCH_HEADER)
+
+# ================= CHECK PCH HEADER =================
 ifneq ("$(wildcard $(PCH_HEADER))","")
     HAS_PCH := 1
 else
@@ -53,57 +55,47 @@ define log
 	printf "  %-7s %s\n" "$(1)" "$(2)"
 endef
 
-.PHONY: all info subdirs link clear rebuild pch check_pch
+.PHONY: all info subdirs link clear rebuild check_pch
 
-ifeq ($(BUILD),pch)
-all: info $(PCH_FILE)
-else
-all: info check_pch subdirs link
-endif
+# ================= MAIN =================
+all: info check_pch $(PCH_FILE) subdirs link
 
 info:
 	@echo "Build mode : $(MODETXT)"
 	@if [ "$(HAS_PCH)" = "1" ]; then \
-		if [ -f "$(PCH_FILE)" ]; then \
-			echo "PCH        : compiled"; \
-		else \
-			echo "PCH        : header exists (not compiled)"; \
-		fi \
+		echo "PCH        : enabled"; \
 	else \
-		echo "PCH        : none"; \
+		echo "PCH        : missing"; \
 	fi
 
+# ❗ Error hanya kalau header tidak ada
 check_pch:
-ifeq ($(HAS_PCH),1)
-	@if [ ! -f "$(PCH_FILE)" ]; then \
-		echo -e "\e[1;31mERROR: Precompiled Header (PCH) not found!\e[0m"; \
-		echo "Please run 'make BUILD=pch' first to prepare the environment."; \
-		exit 1; \
-	fi
+ifeq ($(HAS_PCH),0)
+	@echo -e "\e[1;31mERROR: pch.h not found!\e[0m"; \
+	echo "Expected: $(PCH_HEADER_REL)"; \
+	exit 1;
 endif
 
-pch: $(PCH_FILE)
-
+# ================= BUILD PCH (AUTO) =================
 $(PCH_FILE): $(PCH_HEADER)
-ifeq ($(HAS_PCH),1)
 	$(Q)$(call log,PCH,$(call logpath,$(PCH_HEADER),$(PCH_HEADER_REL)))
 	@mkdir -p $(BUILD_DIR)
 	$(Q)$(CC) $(CFLAGS) -x c-header $(PCH_HEADER) -o $(PCH_FILE)
-else
-	@echo "No pch.h found"
-endif
 
+# ================= SUBDIR =================
 subdirs:
 	@for dir in $(SUBDIRS); do \
 		$(call log,MAKE,$$dir); \
 		$(MAKE) -C $$dir V=$(V) || exit 1; \
 	done
 
+# ================= LINK =================
 link:
 	$(Q)$(call log,LINK,$(TARGET))
 	@mkdir -p $(BUILD_DIR)
 	$(Q)$(CC) $(shell find $(BUILD_DIR) -name '*.o' 2>/dev/null) -o $(TARGET) $(LDFLAGS)
 
+# ================= CLEAN =================
 clear:
 	$(Q)$(call log,CLEAR,build)
 	@for dir in $(SUBDIRS); do \
